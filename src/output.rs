@@ -1,3 +1,6 @@
+// Copyright (c) 2026 BogdanNL (https://github.com/BogdanNL)
+// SPDX-License-Identifier: MIT
+
 //! Files are published only after successful decompression and validation.
 
 use crate::{archive::Archive, invalid};

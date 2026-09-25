@@ -1,3 +1,6 @@
+// Copyright (c) 2026 BogdanNL (https://github.com/BogdanNL)
+// SPDX-License-Identifier: MIT
+
 //! InstallShield 3.x headers and records, researched from STIX by Veit Kannegieser.
 //! Original sources: https://ecsoft2.org/system/files/repository/stix_src.zip
 //! Linux port: https://github.com/DeclanHoare/stix

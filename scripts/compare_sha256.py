@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 BogdanNL (https://github.com/BogdanNL)
+# SPDX-License-Identifier: MIT
+
 """Compare extracted files with a possibly incomplete reference directory."""
 
 import argparse

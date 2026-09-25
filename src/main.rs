@@ -1,3 +1,6 @@
+// Copyright (c) 2026 BogdanNL (https://github.com/BogdanNL)
+// SPDX-License-Identifier: MIT
+
 use std::env;
 use std::io::{self, Write};
 use std::path::PathBuf;

@@ -56,6 +56,17 @@ stix-unpacker --list INPUT
 но не восстанавливаются. Самораспаковывающиеся EXE-оболочки, зашифрованные архивы
 и более поздние форматы InstallShield CAB не поддерживаются.
 
+## Лицензия
+
+Copyright (c) 2026 [BogdanNL](https://github.com/BogdanNL).
+
+Собственный код проекта распространяется под [лицензией MIT](LICENSE).
+Для частей на основе blast Марка Адлера сохраняется лицензия zlib;
+см. [уведомления о стороннем коде](THIRD_PARTY_NOTICES.md). Поэтому для пакета
+указано SPDX-выражение `MIT AND Zlib`.
+
+Репозиторий: [BogdanNL/stix-unpacker](https://github.com/BogdanNL/stix-unpacker).
+
 ## Сторонние исходники
 
 Структура архивов изучена по **STIX Вайта Каннегизера (Veit Kannegieser)**,

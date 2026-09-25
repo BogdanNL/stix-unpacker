@@ -1,3 +1,6 @@
+// Copyright (c) 2026 BogdanNL (https://github.com/BogdanNL)
+// SPDX-License-Identifier: MIT
+
 // Reuse the compact DCL archive fixture without depending on external installers.
 #[path = "support/mod.rs"]
 mod support;

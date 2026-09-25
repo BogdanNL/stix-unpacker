@@ -1,3 +1,6 @@
+// Copyright (c) 2026 BogdanNL (https://github.com/BogdanNL)
+// SPDX-License-Identifier: MIT
+
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};

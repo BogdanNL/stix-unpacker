@@ -1,3 +1,6 @@
+// Copyright (c) 2026 BogdanNL (https://github.com/BogdanNL)
+// SPDX-License-Identifier: MIT
+
 //! Discover archive signatures first, then construct complete volume maps.
 
 use crate::{archive::safe_path, invalid};

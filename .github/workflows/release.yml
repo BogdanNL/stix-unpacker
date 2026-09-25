@@ -85,7 +85,7 @@ jobs:
         run: cargo +stable test --locked --target "$TARGET"
       - name: Build release binary
         run: cargo +stable build --locked --release --target "$TARGET"
-      - name: Package binary and Markdown files
+      - name: Package binary, documentation, and licenses
         run: |
           python - <<'PY'
           import os
@@ -105,8 +105,10 @@ jobs:
           archive = destination / f"stix-unpacker-{version}-{platform}.zip"
           with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
               bundle.write(binary, binary.name)
+              bundle.write("LICENSE", "LICENSE")
+              bundle.write("THIRD_PARTY_NOTICES.md", "THIRD_PARTY_NOTICES.md")
               for filename in documents.decode("utf-8").split("\0"):
-                  if filename:
+                  if filename and filename != "THIRD_PARTY_NOTICES.md":
                       bundle.write(filename, filename)
           print(f"Created {archive}")
           PY

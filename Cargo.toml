@@ -1,9 +1,12 @@
 [package]
 name = "stix-unpacker"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.74"
 description = "A streaming InstallShield 3.x multi-volume archive unpacker"
+authors = ["BogdanNL"]
+repository = "https://github.com/BogdanNL/stix-unpacker"
+license = "MIT AND Zlib"
 
 [dependencies]
 

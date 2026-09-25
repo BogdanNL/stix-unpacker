@@ -53,6 +53,17 @@ stream end markers, and sizes; it does not verify stored per-file checksums.
 Timestamps are displayed but not restored. Self-extracting EXE wrappers,
 encrypted archives, and later InstallShield CAB formats are not supported.
 
+## License
+
+Copyright (c) 2026 [BogdanNL](https://github.com/BogdanNL).
+
+Original project code is licensed under the [MIT License](LICENSE).
+The portions derived from Mark Adler's blast retain their zlib license;
+see [third-party notices](THIRD_PARTY_NOTICES.md). The package therefore uses
+the SPDX expression `MIT AND Zlib`.
+
+Repository: [BogdanNL/stix-unpacker](https://github.com/BogdanNL/stix-unpacker).
+
 ## Third-party sources
 
 The archive layout was researched using **STIX by Veit Kannegieser**, including

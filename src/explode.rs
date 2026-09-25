@@ -1,3 +1,6 @@
+// Copyright (c) 2026 BogdanNL (https://github.com/BogdanNL), Rust adaptation
+// SPDX-License-Identifier: MIT AND Zlib
+
 //! Streaming PKWARE DCL decompression with a 4096-byte history window.
 //!
 //! This is an altered Rust implementation based on Mark Adler's blast 1.3.
