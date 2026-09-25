@@ -1,0 +1,194 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  metadata:
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Read package version
+        id: version
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+
+          metadata = json.loads(subprocess.check_output([
+              "cargo", "metadata", "--locked", "--offline", "--no-deps",
+              "--format-version", "1",
+          ], text=True))
+          manifest = Path("Cargo.toml").resolve()
+          package = next(p for p in metadata["packages"]
+                         if Path(p["manifest_path"]).resolve() == manifest)
+          version = package["version"]
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"version={version}\ntag=v{version}\n")
+          print(f"Release version: {version}")
+          PY
+
+  build:
+    needs: metadata
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux-x86_64
+            target: x86_64-unknown-linux-gnu
+            binary: stix-unpacker
+          - os: windows-2022
+            platform: windows-x86_64
+            target: x86_64-pc-windows-msvc
+            binary: stix-unpacker.exe
+    runs-on: ${{ matrix.os }}
+    env:
+      VERSION: ${{ needs.metadata.outputs.version }}
+      PLATFORM: ${{ matrix.platform }}
+      TARGET: ${{ matrix.target }}
+      BINARY: ${{ matrix.binary }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal --target "$TARGET"
+      - name: Test on Linux
+        if: runner.os == 'Linux'
+        run: cargo +stable test --locked --target "$TARGET"
+      - name: Build release binary
+        run: cargo +stable build --locked --release --target "$TARGET"
+      - name: Package binary and Markdown files
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import subprocess
+          import zipfile
+
+          version = os.environ["VERSION"]
+          platform = os.environ["PLATFORM"]
+          binary = Path("target") / os.environ["TARGET"] / "release" / os.environ["BINARY"]
+          actual = subprocess.check_output([str(binary), "--version"], text=True).strip()
+          if actual != f"stix-unpacker {version}":
+              raise SystemExit(f"Unexpected binary version: {actual}")
+          documents = subprocess.check_output(["git", "ls-files", "-z", "--", "*.md"])
+          destination = Path("dist")
+          destination.mkdir(exist_ok=True)
+          archive = destination / f"stix-unpacker-{version}-{platform}.zip"
+          with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
+              bundle.write(binary, binary.name)
+              for filename in documents.decode("utf-8").split("\0"):
+                  if filename:
+                      bundle.write(filename, filename)
+          print(f"Created {archive}")
+          PY
+      - name: Upload release archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ matrix.platform }}
+          path: dist/*.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  publish:
+    needs: [metadata, build]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ needs.metadata.outputs.version }}
+      TAG: ${{ needs.metadata.outputs.tag }}
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Download release archives
+        uses: actions/download-artifact@v8
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: true
+      - name: Create tag and publish or update release
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          from urllib.error import HTTPError
+          from urllib.parse import quote
+          from urllib.request import Request, urlopen
+
+          version = os.environ["VERSION"]
+          tag = os.environ["TAG"]
+          repository = os.environ["GH_REPO"]
+          commit = os.environ["GITHUB_SHA"]
+          archives = [Path("dist") / f"stix-unpacker-{version}-{platform}.zip"
+                      for platform in ("linux-x86_64", "windows-x86_64")]
+          for archive in archives:
+              if not archive.is_file():
+                  raise SystemExit(f"Missing release archive: {archive}")
+
+          def lookup(endpoint):
+              request = Request(
+                  f"{os.environ['GITHUB_API_URL']}/repos/{repository}/{endpoint}",
+                  headers={
+                      "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                      "Accept": "application/vnd.github+json",
+                  },
+              )
+              try:
+                  with urlopen(request, timeout=60) as response:
+                      return json.load(response)
+              except HTTPError as error:
+                  if error.code == 404:
+                      return None
+                  raise
+
+          def gh(*args):
+              subprocess.run(["gh", *args], check=True)
+
+          if lookup(f"git/ref/tags/{quote(tag, safe='')}") is None:
+              gh("api", f"repos/{repository}/git/refs", "--method", "POST",
+                 "-f", f"ref=refs/tags/{tag}", "-f", f"sha={commit}")
+
+          release = lookup(f"releases/tags/{quote(tag, safe='')}")
+          if release is None:
+              gh("release", "create", tag, "--verify-tag", "--draft",
+                 "--title", f"stix-unpacker {version}",
+                 "--notes", f"Release archives built from commit {commit}.")
+
+          gh("release", "upload", tag, *(str(path) for path in archives), "--clobber")
+          if release is None or release["draft"]:
+              gh("release", "edit", tag, "--draft=false")
+          PY
