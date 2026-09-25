@@ -1,0 +1,12 @@
+[package]
+name = "stix-unpacker"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.74"
+description = "A streaming InstallShield 3.x multi-volume archive unpacker"
+
+[dependencies]
+
+[profile.release]
+lto = true
+strip = true
